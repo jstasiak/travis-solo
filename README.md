@@ -16,6 +16,65 @@ Usage
 
 Execute *travis-solo* in directory containing ``.travis.yml`` configuration file. It's return code will be 0 in case of success and non-zero in case of failure.
 
+Example ``.travis.yml`` file:
+
+```
+language: python
+python:
+    - "2.7"
+install:
+    - sudo this won't be executed anyway
+env:
+    - VAR=foo
+    - VAR=bar
+matrix:
+    include:
+      - python: "2.7"
+        env: VAR=baz
+
+script: echo "VAR is $VAR"
+```
+
+Output:
+
+```
+-> % python travis_solo.py 
+
+
+Build configuration python2.7 (VAR=u'foo') running
+Preparing the environment
+$ virtualenv --distribute --python=python2.7 /Users/aa/projects/travis-solo/.travis-solo/2.7
+Running virtualenv with interpreter /usr/local/bin/python2.7
+New python executable in /Users/aa/projects/travis-solo/.travis-solo/2.7/bin/python
+Installing distribute...........................................................................................................................................................................................................................done.
+Installing pip................done.
+"sudo this won't be executed anyway" ignored because it contains sudo reference
+$ echo "VAR is $VAR"
+VAR is foo
+
+
+Build configuration python2.7 (VAR=u'bar') running
+Preparing the environment
+"sudo this won't be executed anyway" ignored because it contains sudo reference
+$ echo "VAR is $VAR"
+VAR is bar
+
+
+Build configuration python2.7 (VAR=u'baz') running
+Preparing the environment
+"sudo this won't be executed anyway" ignored because it contains sudo reference
+$ echo "VAR is $VAR"
+VAR is baz
+
+
+Build summary:
+python2.7 (VAR=u'foo'): Build succeeded
+python2.7 (VAR=u'bar'): Build succeeded
+python2.7 (VAR=u'baz'): Build succeeded
+
+-> % echo $?
+0
+```
 
 Restrictions
 ------------
