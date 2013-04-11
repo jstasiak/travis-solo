@@ -10,7 +10,7 @@ from os import environ, getcwd
 from os.path import abspath, dirname, join
 
 PROJECT_ROOT = abspath(dirname(__file__))
-with open(join(PROJECT_ROOT, 'README.md')) as f:
+with open(join(PROJECT_ROOT, 'README.rst')) as f:
 	readme = f.read()
 
 with open(join(PROJECT_ROOT, 'travis_solo.py')) as f:
@@ -23,10 +23,11 @@ setup(
 	description='Local Travis build runner',
 	long_description=readme,
 	author='Jakub Stasiak',
+	url='https://github.com/jstasiak/travis-solo',
 	author_email='jakub@stasiak.at',
 	py_modules=['travis_solo'],
 	platforms=['unix', 'linux', 'osx'],
-	license='http://opensource.org/licenses/MIT',
+	license='MIT',
 	install_requires=[
 		'PyYAML',
 		'termcolor',
