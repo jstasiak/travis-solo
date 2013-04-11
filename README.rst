@@ -79,19 +79,21 @@ First of all you need to remember that your local environment is probably very d
 
 * The only type of project supported right now is Python.
 * Supported configuration properties:
-        * ``before_install``
-        * ``install``
- * ``before_script``
- * ``script``
- * ``after_script``
- * ``python``
-        * ``matrix``
- * ``env``
+
+  * ``before_install``
+  * ``install``
+  * ``before_script``
+  * ``script``
+  * ``after_script``
+  * ``python``
+  * ``matrix``
+  * ``env``
 * ``travis-solo`` sets the following environmental variables:
- * ``TRAVIS=true``
- * ``CI=true``
- * ``TRAVIS_SOLO=true``
- * ``TRAVIS_PYTHON_VERSION=...`` depending on configuration
+
+  * ``TRAVIS=true``
+  * ``CI=true``
+  * ``TRAVIS_SOLO=true``
+  * ``TRAVIS_PYTHON_VERSION=...`` depending on configuration
 * Commands involving ``sudo`` word are silently discarded at the moment
 
 Copyright

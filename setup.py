@@ -32,7 +32,7 @@ setup(
 		'PyYAML',
 		'termcolor',
 	],
-	tests_requre=[
+	tests_require=[
 		'nose==1.2.1',
 	],
 	entry_points=dict(
