@@ -25,11 +25,32 @@ def log_command(command):
 def log_error(error):
 	log(colored('%s' % (error,), 'red'))
 
-def as_list(obj):
-	return obj if isinstance(obj, list) else [obj]
+def as_tuple(obj):
+	return tuple(obj) if isinstance(obj, (list, tuple)) else (obj,)
 
-class Step(object):
-	def __init__(self, name, commands, can_fail, check_call=check_call):
+not_set = object()
+
+class Structure(object):
+	fields = ()
+
+	def __hash__(self):
+		return hash([getattr(self, str(f)) for f in self.fields])
+
+	def __eq__(self, other):
+		return type(self) == type(other) and \
+			[getattr(self, str(f)) for f in self.fields] == [getattr(other, str(f)) for f in self.fields]
+
+	def __repr__(self):
+		return '%s(%s)' % (
+			self.__class__.__name__,
+			', '.join(('%s=%r' % (key, getattr(self, str(key))) for key in self.fields))
+		)
+
+
+class Step(Structure):
+	fields = ('name', 'commands', 'can_fail',)
+
+	def __init__(self, name, commands, can_fail=False, check_call=check_call):
 		self.name = name
 		self.commands = commands
 		self.can_fail = can_fail
@@ -56,7 +77,9 @@ class Step(object):
 		return self.name
 
 
-class Build(object):
+class Build(Structure):
+	fields = ('steps',)
+
 	def __init__(self, steps):
 		self.steps = steps
 
@@ -65,13 +88,16 @@ class Build(object):
 			step.perform()
 
 
-class Configuration(object):
-	def __init__(
-			self, python, variables, recreate=False,
+class Configuration(Structure):
+	fields = ('python', 'variables', 'can_fail', 'recreate')
+
+	def __init__(self,
+			python, variables, can_fail=False, recreate=False,
 			check_call=check_call, isdir=isdir, environ=os.environ):
 		self.python = python
 		self.variables = variables
-		self.recreate=recreate
+		self.can_fail = can_fail
+		self.recreate = recreate
 		self.check_call = check_call
 		self.isdir = isdir
 		self.environ = environ
@@ -129,14 +155,10 @@ class Configuration(object):
 		envs = ', '.join(('%s=%r' % (k, v) for (k, v) in self.variables.items()))
 		return self.full_python + (' (%s)' % (envs,) if envs else '')
 
-	def __repr__(self):
-		return '%s(%s)' % (
-			self.__class__.__name__,
-			', '.join(('%s=%s' % (key, getattr(self, key)) for key in ('python', 'variables')))
-		)
 
+class Runner(Structure):
+	fields = ('build', 'configurations')
 
-class Runner(object):
 	def __init__(self, build, configurations):
 		self.build = build
 		self.configurations = configurations
@@ -170,7 +192,7 @@ class Loader(object):
 
 		steps = []
 		for name, can_fail in lifecycle:
-			commands = as_list(settings.get(name, []))
+			commands = as_tuple(settings.get(name, []))
 			if commands:
 				steps.append(Step(
 					name=name,
@@ -178,13 +200,13 @@ class Loader(object):
 					can_fail=can_fail
 				))
 
-		return steps
+		return tuple(steps)
 
 	def load_configurations(self, settings):
 		assert settings['language'] == 'python', 'Only Python projects are supported right now'
 
-		versions = as_list(settings.get('python', '2.7'))
-		env_sets = [self.parse_env_set(es) for es in as_list(settings.get('env', ''))]
+		versions = as_tuple(settings.get('python', '2.7'))
+		env_sets = [self.parse_env_set(es) for es in as_tuple(settings.get('env', ''))]
 
 		build_matrix = list(product(versions, env_sets))
 
@@ -205,7 +227,7 @@ class Loader(object):
 			if element in build_matrix:
 				build_matrix.remove(element)
 
-		return [Configuration(python=p, variables=dict(v)) for (p, v) in build_matrix]
+		return tuple((Configuration(python=p, variables=dict(v)) for (p, v) in build_matrix))
 
 	def load_from_file(self, file):
 		with open(file) as fd:
