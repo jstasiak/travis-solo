@@ -177,7 +177,7 @@ class Runner(Structure):
 			color = 'green' if result else 'red'
 			log(colored('%s: %s' % (conf, message), color))
 
-		success = all(result for (_, result, _) in results)
+		success = all(result for (configuration, result, _) in results if not configuration.can_fail)
 		return 0 if success else 1
 
 class Loader(object):
@@ -214,7 +214,7 @@ class Loader(object):
 		include = matrix.get('include', [])
 		for i in include:
 			version = i['python']
-			env_set = self.parse_env_set(i['env'])
+			env_set = self.parse_env_set(i.get('env', ''))
 			element = (version, env_set)
 			if element not in build_matrix:
 				build_matrix.append(element)
@@ -222,12 +222,21 @@ class Loader(object):
 		exclude = matrix.get('exclude', [])
 		for e in exclude:
 			version = e['python']
-			env_set = self.parse_env_set(e['env'])
+			env_set = self.parse_env_set(e.get('env', ''))
 			element = (version, env_set)
 			if element in build_matrix:
 				build_matrix.remove(element)
 
-		return tuple((Configuration(python=p, variables=dict(v)) for (p, v) in build_matrix))
+		configurations = tuple((Configuration(python=p, variables=dict(v)) for (p, v) in build_matrix))
+		allow_failures = matrix.get('allow_failures', [])
+		for af in allow_failures:
+			python = af.get('python')
+			variables = dict(self.parse_env_set(af.get('env', '')))
+			for c in configurations:
+				if c.python == python and c.variables == variables:
+					c.can_fail = True
+
+		return configurations
 
 	def load_from_file(self, file):
 		with open(file) as fd:

@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from itertools import permutations
+
+from mock import Mock
 from nose.tools import eq_, ok_
 
-from travis_solo import Configuration, Loader, Step
+from travis_solo import Configuration, Loader, Runner, Step
 
 class TestLoader(object):
 	def setup(self):
@@ -49,7 +52,16 @@ class TestLoader(object):
 						python='3.3',
 						env='A=a',
 					),
+					dict(
+						python='3.3',
+					),
 				],
+				allow_failures=[
+					dict(
+						python='2.7',
+						env='A=b',
+					),
+				]
 			)
 		)
 
@@ -57,7 +69,38 @@ class TestLoader(object):
 
 		eq_(configurations, (
 			Configuration(python='2.7', variables={'A': 'a'}),
-			Configuration(python='2.7', variables={'A': 'b'}),
+			Configuration(python='2.7', variables={'A': 'b'}, can_fail=True),
 			Configuration(python='3.3', variables={'A': 'b'}),
 			Configuration(python='2.7', variables={'A': 'c'}),
 		))
+
+class TestRunner(object):
+	def setup(self):
+		self.runner = Runner(None, ())
+
+	def test_result_depends_on_configuration_runs(self):
+		failing = Mock()
+		failing.can_fail = False
+		failing.run_build.side_effect = Exception()
+
+		succeeding = Mock()
+		succeeding.can_fail = False
+
+		failing_and_can_fail = Mock()
+		failing_and_can_fail.can_fail = True
+		failing_and_can_fail.run_build.side_effect = Exception()
+
+		for confs, result in (
+				((failing,), 1),
+				((succeeding,), 0),
+				((failing_and_can_fail,), 0),
+				((failing, succeeding), 1),
+				((failing, failing_and_can_fail), 1),
+				((succeeding, failing_and_can_fail), 0),
+				((succeeding, failing, failing_and_can_fail), 1)):
+			for confs_permutation in permutations(confs):
+				yield self.check_configurations_and_result, confs_permutation, result
+
+	def check_configurations_and_result(self, configurations, result):
+		self.runner.configurations = configurations
+		eq_(self.runner.run(), result)
