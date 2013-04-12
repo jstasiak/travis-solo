@@ -33,6 +33,7 @@ setup(
 		'termcolor',
 	],
 	tests_require=[
+		'mock==1.0.1',
 		'nose==1.2.1',
 	],
 	entry_points=dict(
