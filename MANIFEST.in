@@ -1,0 +1,1 @@
+include README.rst travis_solo_tests.py
