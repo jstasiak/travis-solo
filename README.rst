@@ -1,6 +1,10 @@
 travis-solo
 ===========
 
+.. image:: https://travis-ci.org/jstasiak/travis-solo.png?branch=master
+   :alt: Build status
+   :target: https://travis-ci.org/jstasiak/travis-solo
+
 *travis-solo* is local Travis build runner. *travis-solo* is itself written in Python and works with:
 
 * CPython 2.6, 2.7, 3.2, 3.3
@@ -71,6 +75,8 @@ Output::
 
     -> % echo $?
     0
+
+**travis-solo can of course run tests for itself**.
 
 Restrictions
 ------------
