@@ -10,19 +10,27 @@ class TestLoader(object):
 		self.loader = Loader()
 
 	def test_loading_steps(self):
-		settings = dict(
-			before_install=['do before install',],
-			install='pip install .',
-			script='nosetests',
-			after_script=['a', 'b'],
+		settings = (
+			('before_install', ['do before install',]),
+			('install', 'pip install .'),
+			('before_script', 'xxx'),
+			('script', 'nosetests'),
+			('after_script', ['a', 'b']),
 		)
-		steps = self.loader.load_steps(settings)
-		eq_(steps, (
+		expected = (
 			Step('before_install', ('do before install',)),
 			Step('install', ('pip install .',)),
+			Step('before_script', ('xxx',)),
 			Step('script', ('nosetests',)),
 			Step('after_script', ('a', 'b'), can_fail=True),
-		))
+		)
+
+		for i in range(len(settings)):
+			yield self.check_loading_steps, dict(settings[:i] + settings[i + 1:]), expected[:i] + expected[i + 1:]
+
+	def check_loading_steps(self, settings, expected):
+		result = self.loader.load_steps(settings)
+		eq_(result, expected)
 
 	def test_loading_configurations(self):
 		settings = dict(
