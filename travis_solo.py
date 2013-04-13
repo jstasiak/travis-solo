@@ -92,8 +92,9 @@ class Configuration(Structure):
 	fields = ('python', 'variables', 'can_fail', 'recreate')
 
 	def __init__(self,
-			python, variables, can_fail=False, recreate=False,
+			python, variables, base_path='.travis-solo', can_fail=False, recreate=False,
 			check_call=check_call, isdir=isdir, environ=os.environ):
+		self.base_path = base_path
 		self.python = python
 		self.variables = variables
 		self.can_fail = can_fail
@@ -104,7 +105,7 @@ class Configuration(Structure):
 
 	@property
 	def virtualenv_path(self):
-		return join(getcwd(), '.travis-solo', self.python)
+		return join(self.base_path, self.python)
 
 	@property
 	def full_python(self):
@@ -143,7 +144,7 @@ class Configuration(Structure):
 					raise
 
 	def prepare_environment(self):
-		self.environ['PATH'] = ':'.join((self.virtualenv_path, self.environ['PATH']))
+		self.environ['PATH'] = ':'.join((join(self.virtualenv_path, 'bin'), self.environ['PATH']))
 		for name in ('CI', 'TRAVIS', 'TRAVIS_SOLO'):
 			self.environ[name] = 'true'
 
@@ -227,7 +228,10 @@ class Loader(object):
 			if element in build_matrix:
 				build_matrix.remove(element)
 
-		configurations = tuple((Configuration(python=p, variables=dict(v)) for (p, v) in build_matrix))
+		configurations = tuple((
+			Configuration(python=p, variables=dict(v), base_path=join(getcwd(), '.travis-solo'))
+			for (p, v) in build_matrix
+		))
 		allow_failures = matrix.get('allow_failures', [])
 		for af in allow_failures:
 			python = af.get('python')

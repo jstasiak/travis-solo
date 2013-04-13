@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from itertools import permutations
+from os.path import join
 
 from mock import Mock
 from nose.tools import eq_, ok_
@@ -104,3 +105,28 @@ class TestRunner(object):
 	def check_configurations_and_result(self, configurations, result):
 		self.runner.configurations = configurations
 		eq_(self.runner.run(), result)
+
+class TestConfiguration(object):
+	def setup(self):
+		self.check_call = Mock()
+		self.isdir = Mock()
+		self.environ = dict(PATH='/usr/bin')
+		self.configuration = Configuration(
+			python='2.7', variables=dict(A='a', B='x'), check_call=self.check_call, isdir=self.isdir, environ=self.environ)
+
+	def test_env_vars_are_set_before_running_a_build(self):
+		outer = self
+
+		class B(object):
+			def run(self):
+				environ = outer.environ
+				eq_(environ.get('CI'), 'true')
+				eq_(environ.get('TRAVIS'), 'true')
+				eq_(environ.get('TRAVIS_SOLO'), 'true')
+
+				path_elements = environ.get('PATH', '').split(':')
+				ok_(len(path_elements) > 0)
+				eq_(path_elements[0], join(outer.configuration.virtualenv_path, 'bin'))
+
+		build = B()
+		self.configuration.run_build(build)
