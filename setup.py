@@ -17,6 +17,16 @@ with open(join(PROJECT_ROOT, 'travis_solo.py')) as f:
 	version_line = [line for line in f.readlines() if line.startswith('__version__')][0]
 	version = version_line.split('=')[1].strip().strip("'")
 
+install_requires = [
+	'PyYAML',
+	'termcolor',
+]
+
+try:
+	import argparse
+except ImportError:
+	install_requires.append('argparse')
+
 setup(
 	name='travis-solo',
 	version=version,
@@ -28,10 +38,7 @@ setup(
 	py_modules=['travis_solo'],
 	platforms=['unix', 'linux', 'osx'],
 	license='MIT',
-	install_requires=[
-		'PyYAML',
-		'termcolor',
-	],
+	install_requires=install_requires,
 	tests_require=[
 		'mock==1.0.1',
 		'nose==1.2.1',

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import json
 import os
 import shlex
 import sys
 
+from argparse import ArgumentParser
 from itertools import product
 from collections import namedtuple
 from os import getcwd
@@ -127,21 +129,20 @@ class Configuration(Structure):
 			self.environ.update(original_environ)
 
 	def prepare_virtualenv(self):
-		if not self.isdir(self.virtualenv_path) or self.recreate:
-			try:
-				command = 'virtualenv --distribute --python=%s %s' % (
-					self.full_python, self.virtualenv_path)
-				log_command(command)
-				self.check_call(command, shell=True)
-			except OSError as e:
+		try:
+			command = 'virtualenv --distribute --python=%s %s' % (
+				self.full_python, self.virtualenv_path)
+			log_command(command)
+			self.check_call(command, shell=True)
+		except OSError as e:
+			log_error(e)
+			raise Exception('No virtualenv executable found, please install virtualenv')
+		except CalledProcessError as e:
+			if e.returncode == 3:
 				log_error(e)
-				raise Exception('No virtualenv executable found, please install virtualenv')
-			except CalledProcessError as e:
-				if e.returncode == 3:
-					log_error(e)
-					raise Exception('Interpreter not found')
-				else:
-					raise
+				raise Exception('Interpreter not found')
+			else:
+				raise
 
 	def prepare_environment(self):
 		self.environ['PATH'] = ':'.join((join(self.virtualenv_path, 'bin'), self.environ['PATH']))
@@ -242,27 +243,51 @@ class Loader(object):
 
 		return configurations
 
-	def load_from_file(self, file):
-		with open(file) as fd:
-			settings = safe_load(fd)
-
-		steps = self.load_steps(settings)
-		configurations = self.load_configurations(settings)
-
-		build = Build(steps)
-		return Runner(build, configurations)
-
 	def parse_env_set(self, env_set):
 		return tuple(tuple(e.strip().split('=')) for e in env_set.split())
 
+class Main(object):
+	def __init__(self, getcwd=getcwd, isfile=isfile, open=open):
+		self.getcwd = getcwd
+		self.isfile = isfile
+		self.open = open
 
-def main():
-	travis_file = join(getcwd(), '.travis.yml')
-	assert isfile(travis_file), 'No .travis.yml file found in current directory'
+	def run(self, argv):
+		args = self.get_args(argv)
+		settings = self.get_settings(args)
+		
+		loader = Loader()
+		steps = loader.load_steps(settings)
+		configurations = loader.load_configurations(settings)
 
-	loader = Loader()
-	runner = loader.load_from_file(travis_file)
-	sys.exit(runner.run())
+		build = Build(steps)
+		runner = Runner(build, configurations)
+		sys.exit(runner.run())
+
+	def get_args(self, argv):
+		parser = ArgumentParser(description='Local Travis build runner')
+		parser.add_argument(
+			'--overwrite', dest='overwrite', action='store',
+			help='Overwrite settings loaded from file with JSON-encoded dict. Usage:\n'
+			     '''--overwrite '{"python": "2.7", "env": ["A=a", "A=b"]}' ''')
+		parser.add_argument('--version', action='version', version=__version__)
+				
+		return parser.parse_args(argv[1:])
+
+	def get_settings(self, args):
+		travis_file = join(self.getcwd(), '.travis.yml')
+		assert self.isfile(travis_file), 'File %s not found' % (travis_file,)
+
+		with self.open(travis_file) as fd:
+			settings = safe_load(fd)
+
+		overwrite = args.overwrite or '{}'
+		decoded = json.loads(overwrite)
+		settings.update(decoded)
+
+		return settings
+
 
 if __name__ == '__main__':
-	main()
+	main = Main()
+	main.run(sys.argv)
