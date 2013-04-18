@@ -20,7 +20,7 @@ Usage
 
 Execute *travis-solo* in directory containing ``.travis.yml`` configuration file. It's return code will be 0 in case of success and non-zero in case of failure.
 
-Available command line parameters::
+Available command line parameters:
 
 * ``--overwrite DATA`` - ``DATA`` should be JSON-encoded dictionary which keys will overwrite
   Travis settings. For example if you want to restrict build to Python 2.7 without any
