@@ -16,7 +16,7 @@ from subprocess import CalledProcessError, check_call
 from termcolor import colored
 from yaml import safe_load
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 def log(message=''):
 	print(message)
@@ -246,7 +246,7 @@ class Loader(object):
 	def parse_env_set(self, env_set):
 		return tuple(tuple(e.strip().split('=')) for e in env_set.split())
 
-class Main(object):
+class Application(object):
 	def __init__(self, getcwd=getcwd, isfile=isfile, open=open):
 		self.getcwd = getcwd
 		self.isfile = isfile
@@ -287,7 +287,9 @@ class Main(object):
 
 		return settings
 
+def main():
+	app = Application()
+	app.run(sys.argv)
 
 if __name__ == '__main__':
-	main = Main()
-	main.run(sys.argv)
+	main()
