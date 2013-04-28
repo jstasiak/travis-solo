@@ -174,6 +174,7 @@ class Runner(Structure):
 		self.configurations = configurations
 
 	def run(self):
+		log('travis-solo version %s' % (__version__,))
 		results = []
 		for c in self.configurations:
 			try:
