@@ -1,3 +1,5 @@
 ve/
 .travis-solo/
 dist/
+build/
+*.egg-info/
