@@ -60,6 +60,7 @@ class Step(Structure):
 
 	def perform(self):
 		try:
+			log(colored('Performing %s step' % (self,), attrs=['bold']))
 			for command in self.commands:
 				self.execute(command)
 		except Exception as e:
@@ -120,6 +121,13 @@ class Configuration(Structure):
 			log('Preparing the environment')
 			self.prepare_virtualenv()
 			self.prepare_environment()
+			for command in (
+				'which python',
+				'which pip',
+				'python -c "import sys; print(sys.path)"',
+					):
+				log_command(command)
+				check_call(command, shell=True)
 			build.run()
 		except Exception as e:
 			log_error(e)
