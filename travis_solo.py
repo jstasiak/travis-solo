@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import functools
 import json
 import os
 import shlex
@@ -30,7 +31,25 @@ def log_error(error):
 def as_tuple(obj):
 	return tuple(obj) if isinstance(obj, (list, tuple)) else (obj,)
 
-not_set = object()
+try:
+	unicode = unicode
+	def native_str(s):
+		if isinstance(s, unicode):
+			s = s.encode('utf-8')
+		assert isinstance(s, str)
+		return s
+except NameError:
+	def native_str(s):
+		assert isinstance(s, str)
+		return s
+
+def native_str_result(function):
+	@functools.wraps(function)
+	def wrapper(*args, **kwargs):
+		result = function(*args, **kwargs)
+		return native_str(result)
+	return wrapper
+
 
 class Structure(object):
 	fields = ()
@@ -47,6 +66,9 @@ class Structure(object):
 			self.__class__.__name__,
 			', '.join(('%s=%r' % (key, getattr(self, str(key))) for key in self.fields))
 		)
+
+	def __unicode__(self):
+		return self.__str__().decode('utf-8')
 
 
 class Step(Structure):
@@ -75,7 +97,8 @@ class Step(Structure):
 			log_command(command)
 			self.check_call(command, shell=True)
 
-	def __unicode__(self):
+	@native_str_result
+	def __str__(self):
 		return self.name
 
 
@@ -153,7 +176,8 @@ class Configuration(Structure):
 
 		self.environ.update(self.variables)
 
-	def __unicode__(self):
+	@native_str_result
+	def __str__(self):
 		envs = ', '.join(('%s=%r' % (k, v) for (k, v) in self.variables.items()))
 		return self.full_python + (' (%s)' % (envs,) if envs else '')
 
