@@ -147,7 +147,13 @@ class Configuration(Structure):
 			for command in (
 				'which python',
 				'which pip',
-				'python -c "import sys; print(sys.path)"',
+				'python -c '
+					'''"import os; import sys; import pprint;'''
+					'''print('sys.version_info: ' + str(sys.version_info));'''
+					'''print('sys.path:'); pprint.pprint(sys.path);'''
+					'''print('sys.executable: ' + sys.executable);'''
+					'''print('PATH:'); pprint.pprint(os.environ.get('PATH', '').split(':'));'''
+					'"',
 					):
 				log_command(command)
 				check_call(command, shell=True)
