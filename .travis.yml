@@ -6,6 +6,6 @@ python:
     - "3.3"
     - "pypy"
 install:
-    - pip install nose==1.2.1
+    - pip install mock==1.0.1 nose==1.2.1
     - pip install .
 script: nosetests -v
