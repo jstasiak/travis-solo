@@ -169,6 +169,12 @@ class Configuration(Structure):
 
 	def prepare_environment(self):
 		self.environ['PATH'] = ':'.join((join(self.virtualenv_path, 'bin'), self.environ['PATH']))
+
+		try:
+			del self.environ['__PYVENV_LAUNCHER__']
+		except KeyError:
+			pass
+
 		for name in ('CI', 'TRAVIS', 'TRAVIS_SOLO'):
 			self.environ[name] = 'true'
 

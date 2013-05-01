@@ -110,7 +110,7 @@ class TestConfiguration(object):
 	def setup(self):
 		self.check_call = Mock()
 		self.isdir = Mock()
-		self.environ = dict(PATH='/usr/bin')
+		self.environ = dict(PATH='/usr/bin', __PYVENV_LAUNCHER__='x')
 		self.configuration = Configuration(
 			python='2.7', variables=dict(A='a', B='x'), check_call=self.check_call, isdir=self.isdir, environ=self.environ)
 
@@ -127,6 +127,7 @@ class TestConfiguration(object):
 				path_elements = environ.get('PATH', '').split(':')
 				ok_(len(path_elements) > 0)
 				eq_(path_elements[0], join(outer.configuration.virtualenv_path, 'bin'))
+				assert '__PYVENV_LAUNCHER__' not in environ
 
 		build = B()
 		self.configuration.run_build(build)
