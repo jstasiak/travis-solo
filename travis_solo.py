@@ -146,6 +146,7 @@ class Configuration(Structure):
 			self.prepare_environment()
 			for command in (
 				'which python',
+				'export |grep -i python',
 				'ls -lah `which python`; true',
 				'which pip',
 				'alias; true',
