@@ -146,7 +146,10 @@ class Configuration(Structure):
 			self.prepare_environment()
 			for command in (
 				'which python',
+				'ls -lah `which python`; true',
 				'which pip',
+				'alias; true',
+				'hash; true',
 				'python -c '
 					'''"import os; import sys; import pprint;'''
 					'''print('sys.version_info: ' + str(sys.version_info));'''
