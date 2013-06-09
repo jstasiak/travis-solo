@@ -196,14 +196,20 @@ class Runner(Structure):
 		self.build = build
 		self.configurations = configurations
 
-	def run(self):
-		results = []
-		for c in self.configurations:
-			try:
-				c.run_build(self.build)
-				results.append((c, True, 'Build succeeded'))
-			except Exception as e:
-				results.append((c, False, e))
+	def _run(self, configuration):
+		try:
+			configuration.run_build(self.build)
+			return (configuration, True, 'Build succeeded')
+		except Exception as e:
+			return (configuration, False, e)
+
+	def run(self, jobs=1):
+		if jobs > 1:
+			from multiprocessing.pool import ThreadPool
+			pool = ThreadPool(jobs)
+			results = pool.map(self._run, self.configurations)
+		else:
+			results = [self._run(c) for c in self.configurations]
 
 		log(colored('\n\nBuild summary:', attrs=['bold']))
 		for conf, result, message in results:
@@ -293,7 +299,7 @@ class Application(object):
 
 		build = Build(steps)
 		runner = Runner(build, configurations)
-		sys.exit(runner.run())
+		sys.exit(runner.run(args.jobs))
 
 	def get_args(self, argv):
 		parser = ArgumentParser(description='Local Travis build runner')
@@ -301,9 +307,21 @@ class Application(object):
 			'--overwrite', dest='overwrite', action='store',
 			help='Overwrite settings loaded from file with JSON-encoded dict. Usage:\n'
 			     '''--overwrite '{"python": "2.7", "env": ["A=a", "A=b"]}' ''')
+		parser.add_argument(
+			'-j', '--jobs', type=int, default=1,
+			help='number of parallel jobs; '
+			     'match CPU count if value is less than 1')
 		parser.add_argument('--version', action='version', version=__version__)
 
-		return parser.parse_args(argv[1:])
+		args = parser.parse_args(argv[1:])
+
+		if args.jobs < 1:
+		    # Do not import multiprocessing globally in case it is not
+		    # supported on the platform.
+		    import multiprocessing
+		    args.jobs = multiprocessing.cpu_count()
+
+		return args
 
 	def get_settings(self, args):
 		travis_file = join(self.getcwd(), '.travis.yml')
