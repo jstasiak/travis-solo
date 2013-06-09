@@ -286,7 +286,7 @@ class Application(object):
 	def run(self, argv):
 		args = self.get_args(argv)
 		settings = self.get_settings(args)
-		
+
 		loader = Loader()
 		steps = loader.load_steps(settings)
 		configurations = loader.load_configurations(settings)
@@ -302,7 +302,7 @@ class Application(object):
 			help='Overwrite settings loaded from file with JSON-encoded dict. Usage:\n'
 			     '''--overwrite '{"python": "2.7", "env": ["A=a", "A=b"]}' ''')
 		parser.add_argument('--version', action='version', version=__version__)
-				
+
 		return parser.parse_args(argv[1:])
 
 	def get_settings(self, args):
