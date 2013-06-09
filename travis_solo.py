@@ -5,14 +5,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import functools
 import json
 import os
-import shlex
 import sys
 
 from argparse import ArgumentParser
 from itertools import product
-from collections import namedtuple
 from os import getcwd
-from os.path import abspath, dirname, isdir, isfile, join
+from os.path import isdir
+from os.path import isfile
+from os.path import join
 from subprocess import CalledProcessError, check_call
 
 from termcolor import colored
