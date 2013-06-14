@@ -119,7 +119,7 @@ class Configuration(Structure):
 
 	def __init__(self,
 			python, variables, base_path='.travis-solo', can_fail=False, recreate=False,
-			check_call=check_call, isdir=isdir):
+			check_call=check_call, isdir=isdir, environ=os.environ):
 		self.base_path = base_path
 		self.python = python
 		self.variables = variables
@@ -127,7 +127,7 @@ class Configuration(Structure):
 		self.recreate = recreate
 		self.check_call = check_call
 		self.isdir = isdir
-		self.environ = os.environ.copy()
+		self.environ = environ.copy()
 
 	@property
 	def virtualenv_path(self):

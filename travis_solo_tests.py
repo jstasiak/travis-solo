@@ -112,7 +112,7 @@ class TestConfiguration(object):
 		self.isdir = Mock()
 		self.environ = dict(PATH='/usr/bin', __PYVENV_LAUNCHER__='x')
 		self.configuration = Configuration(
-			python='2.7', variables=dict(A='a', B='x'), check_call=self.check_call, isdir=self.isdir)
+			python='2.7', variables=dict(A='a', B='x'), check_call=self.check_call, isdir=self.isdir, environ=self.environ)
 
 	def test_env_vars_are_set_before_running_a_build(self):
 		outer = self
