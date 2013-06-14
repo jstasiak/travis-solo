@@ -81,22 +81,22 @@ class Step(Structure):
 		self.can_fail = can_fail
 		self.check_call = check_call
 
-	def perform(self):
+	def perform(self, environ):
 		try:
 			for command in self.commands:
-				self.execute(command)
-		except Exception as e:
+				self.execute(command, environ)
+		except Exception:
 			log_error('Error performing %r step' % (self,))
 			if not self.can_fail:
 				raise
 
-	def execute(self, command):
+	def execute(self, command, environ):
 		if command.startswith('sudo'):
 			log(colored(
 				'%r ignored because it contains sudo reference' % (command,), 'yellow'))
 		else:
 			log_command(command)
-			self.check_call(command, shell=True)
+			self.check_call(command, shell=True, env=environ)
 
 	@native_str_result
 	def __str__(self):
@@ -109,9 +109,9 @@ class Build(Structure):
 	def __init__(self, steps):
 		self.steps = steps
 
-	def run(self):
+	def run(self, environ):
 		for step in self.steps:
-			step.perform()
+			step.perform(environ)
 
 
 class Configuration(Structure):
@@ -119,7 +119,7 @@ class Configuration(Structure):
 
 	def __init__(self,
 			python, variables, base_path='.travis-solo', can_fail=False, recreate=False,
-			check_call=check_call, isdir=isdir, environ=os.environ):
+			check_call=check_call, isdir=isdir):
 		self.base_path = base_path
 		self.python = python
 		self.variables = variables
@@ -127,7 +127,7 @@ class Configuration(Structure):
 		self.recreate = recreate
 		self.check_call = check_call
 		self.isdir = isdir
-		self.environ = environ
+		self.environ = os.environ.copy()
 
 	@property
 	def virtualenv_path(self):
@@ -144,7 +144,7 @@ class Configuration(Structure):
 			log('Preparing the environment')
 			self.prepare_virtualenv()
 			self.prepare_environment()
-			build.run()
+			build.run(self.environ)
 		except Exception as e:
 			log_error(e)
 			raise
@@ -157,7 +157,7 @@ class Configuration(Structure):
 			command = 'virtualenv --distribute --python=%s %s' % (
 				self.full_python, self.virtualenv_path)
 			log_command(command)
-			self.check_call(command, shell=True)
+			self.check_call(command, shell=True, env=self.environ)
 		except OSError as e:
 			log_error(e)
 			raise Exception('No virtualenv executable found, please install virtualenv')

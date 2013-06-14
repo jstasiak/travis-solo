@@ -112,14 +112,13 @@ class TestConfiguration(object):
 		self.isdir = Mock()
 		self.environ = dict(PATH='/usr/bin', __PYVENV_LAUNCHER__='x')
 		self.configuration = Configuration(
-			python='2.7', variables=dict(A='a', B='x'), check_call=self.check_call, isdir=self.isdir, environ=self.environ)
+			python='2.7', variables=dict(A='a', B='x'), check_call=self.check_call, isdir=self.isdir)
 
 	def test_env_vars_are_set_before_running_a_build(self):
 		outer = self
 
 		class B(object):
-			def run(self):
-				environ = outer.environ
+			def run(self, environ):
 				eq_(environ.get('CI'), 'true')
 				eq_(environ.get('TRAVIS'), 'true')
 				eq_(environ.get('TRAVIS_SOLO'), 'true')
