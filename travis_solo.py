@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import functools
 import json
 import os
+import re
 import shlex
 import sys
 
@@ -130,7 +131,7 @@ class Configuration(Structure):
 
 	@property
 	def virtualenv_path(self):
-		return join(self.base_path, self.python)
+		return join(self.base_path, re.sub(r'[\s,()]', '_', '%s' % self))
 
 	@property
 	def full_python(self):
