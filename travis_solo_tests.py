@@ -118,8 +118,7 @@ class TestConfiguration(object):
 		outer = self
 
 		class B(object):
-			def run(self):
-				environ = outer.environ
+			def run(self, environ):
 				eq_(environ.get('CI'), 'true')
 				eq_(environ.get('TRAVIS'), 'true')
 				eq_(environ.get('TRAVIS_SOLO'), 'true')

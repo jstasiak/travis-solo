@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*
 from __future__ import absolute_import, division, print_function
 
-import platform
-
 from setuptools import setup
 
-from os import environ, getcwd
 from os.path import abspath, dirname, join
 
 PROJECT_ROOT = abspath(dirname(__file__))

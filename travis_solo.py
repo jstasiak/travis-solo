@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -5,14 +6,12 @@ import functools
 import json
 import os
 import re
-import shlex
 import sys
 
 from argparse import ArgumentParser
 from itertools import product
-from collections import namedtuple
 from os import getcwd
-from os.path import abspath, dirname, isdir, isfile, join
+from os.path import isdir, isfile, join
 from subprocess import CalledProcessError, check_call
 
 from termcolor import colored
@@ -81,22 +80,22 @@ class Step(Structure):
 		self.can_fail = can_fail
 		self.check_call = check_call
 
-	def perform(self):
+	def perform(self, environ):
 		try:
 			for command in self.commands:
-				self.execute(command)
-		except Exception as e:
+				self.execute(command, environ)
+		except Exception:
 			log_error('Error performing %r step' % (self,))
 			if not self.can_fail:
 				raise
 
-	def execute(self, command):
+	def execute(self, command, environ):
 		if command.startswith('sudo'):
 			log(colored(
 				'%r ignored because it contains sudo reference' % (command,), 'yellow'))
 		else:
 			log_command(command)
-			self.check_call(command, shell=True)
+			self.check_call(command, shell=True, env=environ)
 
 	@native_str_result
 	def __str__(self):
@@ -109,9 +108,9 @@ class Build(Structure):
 	def __init__(self, steps):
 		self.steps = steps
 
-	def run(self):
+	def run(self, environ):
 		for step in self.steps:
-			step.perform()
+			step.perform(environ)
 
 
 class Configuration(Structure):
@@ -127,7 +126,7 @@ class Configuration(Structure):
 		self.recreate = recreate
 		self.check_call = check_call
 		self.isdir = isdir
-		self.environ = environ
+		self.environ = environ.copy()
 
 	@property
 	def virtualenv_path(self):
@@ -144,7 +143,7 @@ class Configuration(Structure):
 			log('Preparing the environment')
 			self.prepare_virtualenv()
 			self.prepare_environment()
-			build.run()
+			build.run(self.environ)
 		except Exception as e:
 			log_error(e)
 			raise
@@ -157,7 +156,7 @@ class Configuration(Structure):
 			command = 'virtualenv --distribute --python=%s %s' % (
 				self.full_python, self.virtualenv_path)
 			log_command(command)
-			self.check_call(command, shell=True)
+			self.check_call(command, shell=True, env=self.environ)
 		except OSError as e:
 			log_error(e)
 			raise Exception('No virtualenv executable found, please install virtualenv')
@@ -196,14 +195,20 @@ class Runner(Structure):
 		self.build = build
 		self.configurations = configurations
 
-	def run(self):
-		results = []
-		for c in self.configurations:
-			try:
-				c.run_build(self.build)
-				results.append((c, True, 'Build succeeded'))
-			except Exception as e:
-				results.append((c, False, e))
+	def _run(self, configuration):
+		try:
+			configuration.run_build(self.build)
+			return (configuration, True, 'Build succeeded')
+		except Exception as e:
+			return (configuration, False, e)
+
+	def run(self, jobs=1):
+		if jobs > 1:
+			from multiprocessing.pool import ThreadPool
+			pool = ThreadPool(jobs)
+			results = pool.map(self._run, self.configurations)
+		else:
+			results = [self._run(c) for c in self.configurations]
 
 		log(colored('\n\nBuild summary:', attrs=['bold']))
 		for conf, result, message in results:
@@ -286,14 +291,14 @@ class Application(object):
 	def run(self, argv):
 		args = self.get_args(argv)
 		settings = self.get_settings(args)
-		
+
 		loader = Loader()
 		steps = loader.load_steps(settings)
 		configurations = loader.load_configurations(settings)
 
 		build = Build(steps)
 		runner = Runner(build, configurations)
-		sys.exit(runner.run())
+		sys.exit(runner.run(args.jobs))
 
 	def get_args(self, argv):
 		parser = ArgumentParser(description='Local Travis build runner')
@@ -301,9 +306,21 @@ class Application(object):
 			'--overwrite', dest='overwrite', action='store',
 			help='Overwrite settings loaded from file with JSON-encoded dict. Usage:\n'
 			     '''--overwrite '{"python": "2.7", "env": ["A=a", "A=b"]}' ''')
+		parser.add_argument(
+			'-j', '--jobs', type=int, default=1,
+			help='number of parallel jobs; '
+			     'match CPU count if value is less than 1')
 		parser.add_argument('--version', action='version', version=__version__)
-				
-		return parser.parse_args(argv[1:])
+
+		args = parser.parse_args(argv[1:])
+
+		if args.jobs < 1:
+			# Do not import multiprocessing globally in case it is not
+			# supported on the platform.
+			import multiprocessing
+			args.jobs = multiprocessing.cpu_count()
+
+		return args
 
 	def get_settings(self, args):
 		travis_file = join(self.getcwd(), '.travis.yml')
