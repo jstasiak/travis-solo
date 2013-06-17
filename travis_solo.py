@@ -316,10 +316,10 @@ class Application(object):
 		args = parser.parse_args(argv[1:])
 
 		if args.jobs < 1:
-		    # Do not import multiprocessing globally in case it is not
-		    # supported on the platform.
-		    import multiprocessing
-		    args.jobs = multiprocessing.cpu_count()
+			# Do not import multiprocessing globally in case it is not
+			# supported on the platform.
+			import multiprocessing
+			args.jobs = multiprocessing.cpu_count()
 
 		return args
 
