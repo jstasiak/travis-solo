@@ -40,7 +40,7 @@ class TestLoader(object):
 		settings = dict(
 			language='python',
 			python=['2.7', '3.3'],
-			env=['A=a', 'A=b'],
+			env=['A=a B="asd qwe x=y"', 'A=b'],
 			matrix=dict(
 				include=[
 					dict(
@@ -51,7 +51,7 @@ class TestLoader(object):
 				exclude=[
 					dict(
 						python='3.3',
-						env='A=a',
+						env='A=a B="asd qwe x=y"',
 					),
 					dict(
 						python='3.3',
@@ -69,7 +69,7 @@ class TestLoader(object):
 		configurations = self.loader.load_configurations(settings)
 
 		eq_(configurations, (
-			Configuration(python='2.7', variables={'A': 'a'}),
+			Configuration(python='2.7', variables={'A': 'a', 'B': 'asd qwe x=y'}),
 			Configuration(python='2.7', variables={'A': 'b'}, can_fail=True),
 			Configuration(python='3.3', variables={'A': 'b'}),
 			Configuration(python='2.7', variables={'A': 'c'}),

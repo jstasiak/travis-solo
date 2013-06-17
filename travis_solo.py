@@ -6,6 +6,7 @@ import functools
 import json
 import os
 import re
+import shlex
 import sys
 
 from argparse import ArgumentParser
@@ -280,7 +281,8 @@ class Loader(object):
 		return configurations
 
 	def parse_env_set(self, env_set):
-		return tuple(tuple(e.strip().split('=')) for e in env_set.split())
+		assignments = shlex.split(env_set)
+		return tuple(tuple(a.split('=', 1)) for a in assignments)
 
 class Application(object):
 	def __init__(self, getcwd=getcwd, isfile=isfile, open=open):
