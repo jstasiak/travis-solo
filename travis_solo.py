@@ -34,12 +34,16 @@ def as_tuple(obj):
 
 try:
 	unicode = unicode
+	PY3 = False
+
 	def native_str(s):
 		if isinstance(s, unicode):
 			s = s.encode('utf-8')
 		assert isinstance(s, str)
 		return s
 except NameError:
+	PY3 = True
+
 	def native_str(s):
 		assert isinstance(s, str)
 		return s
@@ -281,7 +285,15 @@ class Loader(object):
 		return configurations
 
 	def parse_env_set(self, env_set):
+		# Prior to Python 2.7.3 shlex.split didn't support unicode input
+		if not PY3:
+			env_set = env_set.encode('utf-8')
+
 		assignments = shlex.split(env_set)
+
+		if not PY3:
+			assignments = [a.decode('utf-8') for a in assignments]
+
 		return tuple(tuple(a.split('=', 1)) for a in assignments)
 
 class Application(object):
