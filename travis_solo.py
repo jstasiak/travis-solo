@@ -170,7 +170,7 @@ class Configuration(Structure):
 
 	def prepare_virtualenv(self):
 		if self.recreate:
-			self.rmtree(self.virtualenv_path)
+			self.rmtree(self.virtualenv_path, ignore_errors=True)
 		elif self.exists(self.virtualenv_path):
 			return
 
