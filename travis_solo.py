@@ -7,12 +7,13 @@ import json
 import os
 import re
 import shlex
+import shutil
 import sys
 
 from argparse import ArgumentParser
 from itertools import product
 from os import getcwd
-from os.path import isdir, isfile, join
+from os.path import exists, isdir, isfile, join
 from subprocess import CalledProcessError, check_call
 
 from termcolor import colored
@@ -131,7 +132,7 @@ class Configuration(Structure):
 	def __init__(
 			self,
 			python, variables, base_path='.travis-solo', can_fail=False, recreate=False,
-			check_call=check_call, isdir=isdir, environ=os.environ
+			check_call=check_call, isdir=isdir, environ=os.environ, exists=exists, rmtree=shutil.rmtree
 	):
 		self.base_path = base_path
 		self.python = python
@@ -141,6 +142,8 @@ class Configuration(Structure):
 		self.check_call = check_call
 		self.isdir = isdir
 		self.environ = environ.copy()
+		self.exists = exists
+		self.rmtree = rmtree
 
 	@property
 	def virtualenv_path(self):
@@ -166,6 +169,11 @@ class Configuration(Structure):
 			self.environ.update(original_environ)
 
 	def prepare_virtualenv(self):
+		if self.recreate:
+			self.rmtree(self.virtualenv_path)
+		elif self.exists(self.virtualenv_path):
+			return
+
 		try:
 			command = 'virtualenv --distribute --python=%s %s' % (
 				self.full_python, self.virtualenv_path)
@@ -254,7 +262,7 @@ class Loader(object):
 
 		return tuple(steps)
 
-	def load_configurations(self, settings):
+	def load_configurations(self, settings, recreate=False):
 		assert settings['language'] == 'python', 'Only Python projects are supported right now'
 
 		versions = as_tuple(settings.get('python', '2.7'))
@@ -280,7 +288,7 @@ class Loader(object):
 				build_matrix.remove(element)
 
 		configurations = tuple((
-			Configuration(python=p, variables=dict(v), base_path=join(getcwd(), '.travis-solo'))
+			Configuration(python=p, variables=dict(v), base_path=join(getcwd(), '.travis-solo'), recreate=recreate)
 			for (p, v) in build_matrix
 		))
 		allow_failures = matrix.get('allow_failures', [])
@@ -317,7 +325,7 @@ class Application(object):
 
 		loader = Loader()
 		steps = loader.load_steps(settings)
-		configurations = loader.load_configurations(settings)
+		configurations = loader.load_configurations(settings, args.recreate)
 
 		build = Build(steps)
 		runner = Runner(build, configurations)
@@ -333,6 +341,9 @@ class Application(object):
 			'-j', '--jobs', type=int, default=1,
 			help='number of parallel jobs; '
 			     'match CPU count if value is less than 1')
+		parser.add_argument(
+			'--recreate', action='store_true',
+			help='recreate the virtualenvs')
 		parser.add_argument('--version', action='version', version=__version__)
 
 		args = parser.parse_args(argv[1:])
