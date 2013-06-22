@@ -18,7 +18,7 @@ from subprocess import CalledProcessError, check_call
 from termcolor import colored
 from yaml import safe_load
 
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 
 
 def log(message=''):
