@@ -20,14 +20,18 @@ from yaml import safe_load
 
 __version__ = '0.0.6'
 
+
 def log(message=''):
 	print(message)
+
 
 def log_command(command):
 	log('$ %s' % (colored(command, attrs=['bold']),))
 
+
 def log_error(error):
 	log(colored('%s' % (error,), 'red'))
+
 
 def as_tuple(obj):
 	return tuple(obj) if isinstance(obj, (list, tuple)) else (obj,)
@@ -48,6 +52,7 @@ except NameError:
 		assert isinstance(s, str)
 		return s
 
+
 def native_str_result(function):
 	@functools.wraps(function)
 	def wrapper(*args, **kwargs):
@@ -63,8 +68,10 @@ class Structure(object):
 		return hash([getattr(self, str(f)) for f in self.fields])
 
 	def __eq__(self, other):
-		return type(self) == type(other) and \
+		return (
+			type(self) == type(other) and
 			[getattr(self, str(f)) for f in self.fields] == [getattr(other, str(f)) for f in self.fields]
+		)
 
 	def __repr__(self):
 		return '%s(%s)' % (
@@ -121,9 +128,11 @@ class Build(Structure):
 class Configuration(Structure):
 	fields = ('python', 'variables', 'can_fail', 'recreate')
 
-	def __init__(self,
+	def __init__(
+			self,
 			python, variables, base_path='.travis-solo', can_fail=False, recreate=False,
-			check_call=check_call, isdir=isdir, environ=os.environ):
+			check_call=check_call, isdir=isdir, environ=os.environ
+	):
 		self.base_path = base_path
 		self.python = python
 		self.variables = variables
