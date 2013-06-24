@@ -20,13 +20,7 @@ Usage
 
 Execute *travis-solo* in directory containing ``.travis.yml`` configuration file. It's return code will be 0 in case of success and non-zero in case of failure.
 
-Available command line parameters:
-
-* ``--overwrite DATA`` - ``DATA`` should be JSON-encoded dictionary which keys will overwrite
-  Travis settings. For example if you want to restrict build to Python 2.7 without any
-  environmental variables set::
-
-      travis-solo --overwrite '{"python": "2.7", "env": ""}'
+``travis-solo -h`` or ``travis-solo --help`` will display usage information.
 
 Example ``.travis.yml`` file::
 
@@ -47,7 +41,7 @@ Example ``.travis.yml`` file::
 
 Output::
 
-    -> % python travis_solo.py 
+    -> % travis-solo 
 
 
     Build configuration python2.7 (VAR=u'foo') running
@@ -109,6 +103,18 @@ First of all you need to remember that your local environment is probably very d
   * ``TRAVIS_SOLO=true``
   * ``TRAVIS_PYTHON_VERSION=...`` depending on configuration
 * Commands involving ``sudo`` word are silently discarded at the moment
+* When running parallel builds (``--jobs X`` where X != 1) you need to make sure that builds don't operate on the same project files at the same time.
+
+  For example: Python package build process can use ``build`` directory to store the results. There is a workaround for that (borrowed from https://github.com/hhatto/autopep8/commit/1c895989422b0a02a32a4383a3f0467b44f20663) - change
+  
+    python setup.py install # or similar
+    
+  to
+    
+    python setup.py build --build-base=".build-$TRAVIS_PYTHON_VERSION" install
+    
+  This change will make sure that each build environment will operate in separate build directory as far as building your package is concerned.
+
 
 Copyright
 ---------
