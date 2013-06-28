@@ -288,7 +288,7 @@ class Loader(object):
 				build_matrix.remove(element)
 
 		configurations = tuple((
-			Configuration(python=p, variables=dict(v), base_path=join(getcwd(), '.travis-solo'), recreate=recreate)
+			Configuration(python=str(p), variables=dict(v), base_path=join(getcwd(), '.travis-solo'), recreate=recreate)
 			for (p, v) in build_matrix
 		))
 		allow_failures = matrix.get('allow_failures', [])

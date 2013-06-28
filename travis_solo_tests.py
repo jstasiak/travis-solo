@@ -4,7 +4,11 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from itertools import permutations
 from os.path import join
 
-from mock import Mock
+try:
+	from unittest.mock import Mock
+except ImportError:
+	from mock import Mock
+
 from nose.tools import eq_, ok_
 
 from travis_solo import Configuration, Loader, Runner, Step
@@ -73,6 +77,19 @@ class TestLoader(object):
 			Configuration(python='2.7', variables={'A': 'b'}, can_fail=True),
 			Configuration(python='3.3', variables={'A': 'b'}),
 			Configuration(python='2.7', variables={'A': 'c'}),
+		))
+
+	def test_loading_configurations_with_floating_point(self):
+		settings = dict(
+			language='python',
+			python=[2.7, '3.3']
+		)
+
+		configurations = self.loader.load_configurations(settings)
+
+		eq_(configurations, (
+			Configuration(python='2.7', variables={}),
+			Configuration(python='3.3', variables={}),
 		))
 
 class TestRunner(object):
