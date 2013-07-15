@@ -1,5 +1,6 @@
 ve/
 .travis-solo/
+__pycache__/
 dist/
 build/
 *.egg-info/
